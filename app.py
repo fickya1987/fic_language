@@ -7,53 +7,57 @@ from dotenv import load_dotenv
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Helper function for question-answering
-def get_answer(question, model="ft:gpt-4o-2024-08-06:personal:fic-lestari-bahasa-01:ANtvR3xr"):  # Use your fine-tuned model ID if available
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant for answering questions in Indonesian languages."},
-            {"role": "user", "content": question}
-        ]
-    )
-    return response.choices[0].message['content'].strip()
-
-# Helper function for translation
-def translate_text(text, target_language, model="ft:gpt-4o-2024-08-06:personal:fic-lestari-bahasa-01:ANtvR3xr"):  # Use your fine-tuned model ID if available
-    prompt = f"Translate the following text to {target_language}: '{text}'"
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": "You are a helpful translator."},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    return response.choices[0].message['content'].strip()
+# Define your model ID
+MODEL_ID = "ft:gpt-4o-2024-08-06:personal:fic-lestari-bahasa-01:ANtvR3xr"  # Replace with your actual model ID from OpenAI
 
 # Streamlit UI setup
-st.set_page_config(page_title="Ficky Language Assistant", layout="wide")
-st.sidebar.title("Language Assistant")
-page = st.sidebar.radio("Choose a function", ["Question Answering", "Translation"])
+st.set_page_config(page_title="Chat Assistant", layout="wide")
 
-# Page for Question Answering
-if page == "Question Answering":
-    st.title("Question Answering Assistant")
-    question = st.text_input("Ask a question:")
-    if st.button("Get Answer"):
-        if question:
-            answer = get_answer(question)
-            st.write("Answer:", answer)
-        else:
-            st.write("Please enter a question.")
+# Set up the chat interface
+st.title("Chat with AI Assistant")
 
-# Page for Translation
-elif page == "Translation":
-    st.title("Translation Assistant")
-    text = st.text_input("Enter text to translate:")
-    target_language = st.selectbox("Select target language", ["Sundanese", "Javanese", "Balinese"])
-    if st.button("Translate"):
-        if text:
-            translation = translate_text(text, target_language)
-            st.write("Translation:", translation)
-        else:
-            st.write("Please enter text to translate.")
+# Initialize the message history
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "system", "content": "You are a helpful assistant."}
+    ]
+
+# Display the chat history
+for message in st.session_state.messages:
+    if message["role"] == "user":
+        st.write(f"**User**: {message['content']}")
+    else:
+        st.write(f"**Assistant**: {message['content']}")
+
+# User input
+user_input = st.text_input("Type your message:")
+
+# Send button functionality
+if st.button("Send"):
+    if user_input:
+        # Add the user's message to the session state
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        
+        # Call the OpenAI API
+        try:
+            response = openai.ChatCompletion.create(
+                model=MODEL_ID,
+                messages=st.session_state.messages,
+                temperature=1,
+                max_tokens=2048,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0
+            )
+            
+            # Retrieve the assistant's response
+            assistant_response = response.choices[0].message['content'].strip()
+            
+            # Add the assistant's response to the session state
+            st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+            
+            # Display the assistant's response
+            st.write(f"**Assistant**: {assistant_response}")
+        
+        except Exception as e:
+            st.error(f"Error: {e}")
