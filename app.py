@@ -7,40 +7,53 @@ from dotenv import load_dotenv
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-
-# Helper functions
-def openai_completion(prompt, model="ft:gpt-4o-2024-08-06:personal:fic-lestari-bahasa-01:ANtvR3xr"):
-    response = openai.Completion.create(
+# Helper function for question-answering
+def get_answer(question, model="ft:gpt-4o-2024-08-06:personal:fic-lestari-bahasa-01:ANtvR3xr"):  # Use your fine-tuned model ID if available
+    response = openai.ChatCompletion.create(
         model=model,
-        prompt=prompt,
-        max_tokens=2000
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant for answering questions in Indonesian languages."},
+            {"role": "user", "content": question}
+        ]
     )
-    return response.choices[0].text.strip()
+    return response.choices[0].message['content'].strip()
 
+# Helper function for translation
+def translate_text(text, target_language, model="ft:gpt-4o-2024-08-06:personal:fic-lestari-bahasa-01:ANtvR3xr"):  # Use your fine-tuned model ID if available
+    prompt = f"Translate the following text to {target_language}: '{text}'"
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": "You are a helpful translator."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response.choices[0].message['content'].strip()
 
-
-# Page Configuration
-st.set_page_config(page_title="Multi-Function Language Assistant", layout="wide")
-
-# Sidebar navigation
+# Streamlit UI setup
+st.set_page_config(page_title="Ficky Language Assistant", layout="wide")
 st.sidebar.title("Language Assistant")
 page = st.sidebar.radio("Choose a function", ["Question Answering", "Translation"])
 
-# Page content based on selection
+# Page for Question Answering
 if page == "Question Answering":
-    st.title("Question Answering")
+    st.title("Question Answering Assistant")
     question = st.text_input("Ask a question:")
     if st.button("Get Answer"):
         if question:
-            answer = openai_completion(question)
+            answer = get_answer(question)
             st.write("Answer:", answer)
+        else:
+            st.write("Please enter a question.")
 
+# Page for Translation
 elif page == "Translation":
-    st.title("Translation")
-    sentence = st.text_input("Enter a sentence for translation:")
-    target_language = st.selectbox("Select target language", ["Sundanese", "Javanese", "Balinese","buginese","ngaju"])
+    st.title("Translation Assistant")
+    text = st.text_input("Enter text to translate:")
+    target_language = st.selectbox("Select target language", ["Sundanese", "Javanese", "Balinese"])
     if st.button("Translate"):
-        if sentence:
-            translation_prompt = f"Translate '{sentence}' to {target_language}."
-            translation = openai_completion(translation_prompt)
+        if text:
+            translation = translate_text(text, target_language)
             st.write("Translation:", translation)
+        else:
+            st.write("Please enter text to translate.")
