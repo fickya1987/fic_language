@@ -14,12 +14,12 @@ MODEL_ID = "ft:gpt-4o-2024-08-06:personal:fic-lestari-bahasa-01:ANtvR3xr"  # Rep
 st.set_page_config(page_title="Chat Assistant", layout="wide")
 
 # Set up the chat interface
-st.title("Chat with AI Assistant")
+st.title("LESTARI BAHASA")
 
 # Initialize the message history
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "You are a helpful assistant."}
+        {"role": "system", "content": "You are a helpful Worldwide Translator and Language Expert."}
     ]
 
 # Display the chat history
